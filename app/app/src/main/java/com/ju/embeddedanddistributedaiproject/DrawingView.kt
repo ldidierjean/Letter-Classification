@@ -39,14 +39,14 @@ class DrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         canvas.drawBitmap(mBitmap!!, 0f, 0f, mBitmapPaint)
-        canvas.drawPath(mPath, circlePaint!!)
+        canvas.drawPath(mPath, circlePaint)
         canvas.drawPath(circlePath, circlePaint)
     }
 
     private var mX = 0f
     private var mY = 0f
 
-    private fun touchStart(x: Float, y: Float) {
+    private fun touchDown(x: Float, y: Float) {
         mPath.reset()
         mPath.moveTo(x, y)
         mX = x
@@ -68,9 +68,7 @@ class DrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) 
     private fun touchUp() {
         mPath.lineTo(mX, mY)
         circlePath.reset()
-        // commit the path to our offscreen
         mCanvas!!.drawPath(mPath, circlePaint!!)
-        // kill this so we don't double draw
         mPath.reset()
     }
 
@@ -80,7 +78,7 @@ class DrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) 
         val y = event.y
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                touchStart(x, y)
+                touchDown(x, y)
                 invalidate()
             }
             MotionEvent.ACTION_MOVE -> {
