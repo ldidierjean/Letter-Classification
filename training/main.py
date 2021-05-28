@@ -42,8 +42,6 @@ test_ratio = 1 / 10
 validation_ratio = 1 / 10 * (1 - test_ratio)
 
 x_remaining, x_test, y_remaining, y_test = train_test_split(x, y, test_size=test_ratio, stratify=y)
-print(x_remaining.shape)
-print(y_remaining.shape)
 x_train, x_val, y_train, y_val = train_test_split(x_remaining, y_remaining, test_size=validation_ratio, stratify=y_remaining)
 
 num_classes = 26
@@ -77,6 +75,7 @@ history = model.fit(x=x_train,
     callbacks=[WandbCallback()]
 )
 
+
 # Get accuracy with testing set
 
 test_results = []
@@ -98,3 +97,27 @@ tflite_model = converter.convert()
 
 with open('letter_classification_model.tflite', 'wb') as f:
   f.write(tflite_model)
+
+# Get accuracy of compressed model with testing set
+
+interpreter = lite.Interpreter(model_path='letter_classification_model.tflite')
+
+interpreter.allocate_tensors()
+
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+
+lite_test_results = []
+
+for i in range(len(x_test)):
+    interpreter.set_tensor(input_details[0]['index'], x_test[i].reshape(1, 28, 28, 1).astype('float32'))
+    interpreter.invoke()
+    output = interpreter.get_tensor(output_details[0]['index'])
+    if np.argmax(output) == y_test[i]:
+        lite_test_results.append(1)
+    else:
+        lite_test_results.append(0)
+
+test_accuracy = sum(lite_test_results) / len(lite_test_results)
+
+print("Tested Lite accuracy: " + str(test_accuracy))
